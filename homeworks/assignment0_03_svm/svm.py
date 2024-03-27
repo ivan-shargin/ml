@@ -1,10 +1,12 @@
-from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.metrics import accuracy_score
+# from sklearn.base import BaseEstimator, ClassifierMixin
+# from sklearn.metrics import accuracy_score
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 def rbf(x_1, x_2, sigma=1.):
@@ -12,12 +14,16 @@ def rbf(x_1, x_2, sigma=1.):
 
     Args:
         x_1: torch.tensor shaped `(#samples_1, #features)` of type torch.float32
-        x_2: torch.tensor shaped `(#samples_1, #features)` of type torch.float32
+        x_2: torch.tensor shaped `(#samples_2, #features)` of type torch.float32
     Returns:
         kernel function values for all pairs of samples from x_1 and x_2
         torch.tensor of type torch.float32 shaped `(#samples_1, #samples_2)`
     '''
-    distances = ### YOUR CODE HERE
+    linear = -2 * torch.matmul(x_1, x_2.transpose(0, 1)) + \
+            torch.square(x_1).sum(axis=1).reshape(-1, 1) + \
+            torch.square(x_2).sum(axis=1).reshape(1, -1)
+    distances = np.exp(linear / (2*sigma**2))
+    # print(distances)
     return torch.Tensor(distances).type(torch.float32)
 
 def hinge_loss(scores, labels):
@@ -25,7 +31,9 @@ def hinge_loss(scores, labels):
     '''
     assert len(scores.shape) == 1
     assert len(labels.shape) == 1
-    return ### YOUR CODE HERE
+    margins = scores * labels
+    # print(margins)
+    return torch.maximum(torch.tensor(0.0), 1-margins).mean()
 
 
 class SVM(BaseEstimator, ClassifierMixin):
@@ -35,12 +43,14 @@ class SVM(BaseEstimator, ClassifierMixin):
         
         Args:
             x_1: torch.tensor shaped `(#samples_1, #features)` of type torch.float32
-            x_2: torch.tensor shaped `(#samples_1, #features)` of type torch.float32
+            x_2: torch.tensor shaped `(#samples_2, #features)` of type torch.float32
         Returns:
             kernel function values for all pairs of samples from x_1 and x_2
             torch.tensor shaped `(#samples_1, #samples_2)` of type torch.float32
         '''
-        return ### YOUR CODE HERE
+        return -2 * torch.matmul(x_1, x_2.transpose(0, 1)) + \
+            torch.square(x_1).sum(axis=1).reshape(-1, 1) + \
+            torch.square(x_2).sum(axis=1).reshape(1, -1)
     
     def __init__(
         self,
@@ -83,9 +93,12 @@ class SVM(BaseEstimator, ClassifierMixin):
                 
                 optimizer.zero_grad()     # Manually zero the gradient buffers of the optimizer
                 
-                preds = ### YOUR CODE HERE # get the matrix product using SVM parameters: self.betas and self.bias
+                preds = k_batch @ self.betas + self.bias
+                # preds = self.predict_scores(x_batch)
+                ### YOUR CODE HERE # get the matrix product using SVM parameters: self.betas and self.bias
                 preds = preds.flatten()
                 loss = self.lmbd * self.betas[batch_inds].T @ k_batch @ self.betas + hinge_loss(preds, y_batch)
+                # print('Loss', loss)
                 loss.backward()           # Backpropagation
                 optimizer.step()          # Optimize and adjust weights
 
@@ -102,7 +115,8 @@ class SVM(BaseEstimator, ClassifierMixin):
             batch = torch.from_numpy(batch).float()
             K = self.kernel_function(batch, self.X)
             # compute the margin values for every object in the batch
-            return ### YOUR CODE HERE
+            ### YOUR CODE HERE
+            return (K @ self.betas + self.bias).flatten()
 
     def predict(self, batch):
         scores = self.predict_scores(batch)
