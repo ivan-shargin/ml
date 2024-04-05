@@ -18,9 +18,10 @@ def entropy(y):
     """
     EPS = 0.0005
 
-    # YOUR CODE HERE
-    
-    return 0.
+    counts = np.sum(y, axis=0)
+    probs = counts / y.shape[0]
+    ent = np.sum(probs * np.log(probs + EPS))
+    return ent
     
 def gini(y):
     """
@@ -38,8 +39,10 @@ def gini(y):
     """
 
     # YOUR CODE HERE
-    
-    return 0.
+    counts = np.sum(y, axis=0)
+    probs = counts / y.shape[0]
+    gi = 1.0 - np.sum(np.square(probs))
+    return gi
     
 def variance(y):
     """
@@ -57,8 +60,8 @@ def variance(y):
     """
     
     # YOUR CODE HERE
-    
-    return 0.
+
+    return np.var(y)
 
 def mad_median(y):
     """
@@ -77,8 +80,10 @@ def mad_median(y):
     """
 
     # YOUR CODE HERE
+    median = np.median(y)
+    deviations = y - median
     
-    return 0.
+    return np.mean(abs(deviations))
 
 
 def one_hot_encode(n_classes, y):
@@ -155,6 +160,12 @@ class DecisionTree(BaseEstimator):
         """
 
         # YOUR CODE HERE
+        indices_left = X_subset[:, feature_index] < threshold
+        indices_right = X_subset[:, feature_index] >= threshold
+        X_left = X_subset[indices_left, :]
+        y_left = y_subset[indices_left]
+        X_right = X_subset[indices_right, :]
+        y_right = y_subset[indices_right]
         
         return (X_left, y_left), (X_right, y_right)
     
@@ -189,6 +200,10 @@ class DecisionTree(BaseEstimator):
         """
 
         # YOUR CODE HERE
+        indices_left = X_subset[:, feature_index] < threshold
+        indices_right = X_subset[:, feature_index] >= threshold
+        y_left = y_subset[indices_left]
+        y_right = y_subset[indices_right]
         
         return y_left, y_right
 
