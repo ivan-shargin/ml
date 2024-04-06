@@ -106,6 +106,14 @@ class Node:
         self.proba = proba
         self.left_child = None
         self.right_child = None
+    
+    def predict(self, x):
+        if x < self.value:
+            if self.left_child is None:
+                return self.value
+            self.left_child.predict(x)
+        elif x >= self.value:
+            self.right_child.predict(x)
         
         
 class DecisionTree(BaseEstimator):
@@ -230,6 +238,33 @@ class DecisionTree(BaseEstimator):
 
         """
         # YOUR CODE HERE
+        # n_objects = X_subset.shape[0]
+        n_features = X_subset.shape[1]
+        best_score = np.inf
+        feature_index = None
+        threshold = None
+        for feature_num in range(n_features):
+            real_thresholds = np.unique(X_subset[:, feature_num])
+            for thr in real_thresholds:
+                (y_left, y_right) = self.make_split_only_y(feature_num, thr, X_subset, y_subset)
+                L = y_left.size
+                R = y_right.size
+                if L >= 1:
+                    score_left = L * self.criterion(y_left)
+                else:
+                    score_left = 0.0
+                if R >= 1:
+                    score_right = R * self.criterion(y_right)
+                else:
+                    score_right = 0.0
+                score = score_left + score_right
+                # print(score)
+                if score < best_score:
+                    feature_index = feature_num
+                    threshold = thr
+                    best_score = score
+
+
         return feature_index, threshold
     
     def make_tree(self, X_subset, y_subset):
@@ -252,7 +287,24 @@ class DecisionTree(BaseEstimator):
         """
 
         # YOUR CODE HERE
-        
+        feature_index, threshold = self.choose_best_split(X_subset, y_subset)
+        (X_left, y_left), (X_right, y_right) = self.make_split(feature_index, threshold, X_subset, y_subset)
+        new_node = Node(feature_index, threshold)
+        self.depth += 1
+        if (self.depth < self.max_depth) and (y_left.size * y_right.size > 1):
+            if y_left.size > 1:
+                new_node.left_child = self.make_tree(X_left, y_left)
+            else:
+                new_node.left_child = Node(None, None, y_left[0])
+            if y_right.size > 1:
+                new_node.right_child = self.make_tree(X_right, y_right)
+            else:
+                new_node.right_child = Node(None, None, y_right[0])
+        elif y_left.size * y_right.size == 1:
+            new_node.left_child = Node(None, None, y_left[0])
+            new_node.right_child = Node(None, None, y_right[0])
+        elif self.depth == self.max_depth:
+            new_node.proba = 
         return new_node
         
     def fit(self, X, y):
@@ -295,7 +347,7 @@ class DecisionTree(BaseEstimator):
         
         """
 
-        # YOUR CODE HERE
+        
         
         return y_predicted
         
