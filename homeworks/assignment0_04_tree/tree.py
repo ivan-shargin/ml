@@ -100,12 +100,20 @@ class Node:
     """
     This class is provided "as is" and it is not mandatory to it use in your code.
     """
-    def __init__(self, feature_index, threshold, proba=0):
+    def __init__(self, feature_index=None, threshold=None, proba=0, depth=None):
         self.feature_index = feature_index
         self.value = threshold
         self.proba = proba
         self.left_child = None
         self.right_child = None
+        self.depth = depth
+    
+    def set_threshold(self, feature_index, threshold):
+        self.feature_index = feature_index
+        self.value = threshold
+    
+    def is_leaf(self):
+        return self.value is None
     
     def predict(self, x):
         if x < self.value:
@@ -137,6 +145,9 @@ class DecisionTree(BaseEstimator):
         self.depth = 0
         self.root = None # Use the Node class to initialize it later
         self.debug = debug
+    
+   
+
 
         
         
@@ -287,25 +298,27 @@ class DecisionTree(BaseEstimator):
         """
 
         # YOUR CODE HERE
-        feature_index, threshold = self.choose_best_split(X_subset, y_subset)
-        (X_left, y_left), (X_right, y_right) = self.make_split(feature_index, threshold, X_subset, y_subset)
-        new_node = Node(feature_index, threshold)
-        self.depth += 1
-        if (self.depth < self.max_depth) and (y_left.size * y_right.size > 1):
+        assert self.depth < self.max_depth, 'Depth is bigger than max_depth'
+        new_node = Node(proba=y_subset.mean())
+        
+        if (self.depth == self.max_depth) or y_subset.size == 1:
+            return new_node
+        else:
+            feature_index, threshold = self.choose_best_split(X_subset, y_subset)
+            (X_left, y_left), (X_right, y_right) = \
+                self.make_split(feature_index, threshold, X_subset, y_subset)
             if y_left.size > 1:
                 new_node.left_child = self.make_tree(X_left, y_left)
-            else:
-                new_node.left_child = Node(None, None, y_left[0])
+                self.depth += 1
+            elif y_left.size == 1:
+                new_node.left_child = Node(proba=y_left[0], depth = self.depth+1)
             if y_right.size > 1:
                 new_node.right_child = self.make_tree(X_right, y_right)
-            else:
-                new_node.right_child = Node(None, None, y_right[0])
-        elif y_left.size * y_right.size == 1:
-            new_node.left_child = Node(None, None, y_left[0])
-            new_node.right_child = Node(None, None, y_right[0])
-        elif self.depth == self.max_depth:
-            new_node.proba = 
-        return new_node
+                if y_left.
+            elif y_right.size == 1:
+                new_node.right_child = Node(proba=y_right[0], depth = self.depth+1)
+            
+            return new_node
         
     def fit(self, X, y):
         """
